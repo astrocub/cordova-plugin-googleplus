@@ -19,6 +19,7 @@ import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.plus.Plus;
 import com.google.android.gms.plus.model.people.Person;
+import com.google.android.gms.common.api.Scope;
 import org.apache.cordova.*;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -115,6 +116,11 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
         .addApi(Plus.API, Plus.PlusOptions.builder().build())
         .addScope(Plus.SCOPE_PLUS_LOGIN)
         .addScope(Plus.SCOPE_PLUS_PROFILE)
+        .addScope(new Scope("https://www.googleapis.com/auth/userinfo.email"))
+        .addScope(new Scope("https://www.googleapis.com/auth/calendar"))
+        .addScope(new Scope("https://apps-apis.google.com/a/feeds/calendar/resource/"))
+        .addScope(new Scope("https://www.googleapis.com/auth/admin.directory.user.readonly"))
+        .addScope(new Scope("https://www.googleapis.com/auth/admin.directory.user"))
         .build();
   }
 
