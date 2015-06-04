@@ -15,7 +15,6 @@ import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
-import com.google.android.gms.common.api.GoogleApiClient.ServerAuthCodeCallbacks
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.api.Scope;
@@ -40,14 +39,12 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
   public static final String ACTION_DISCONNECT = "disconnect";
   public static final String ARGUMENT_ANDROID_KEY = "androidApiKey";
   public static final String ARGUMENT_WEB_KEY = "webApiKey";
-  //public static final String SERVER_CLIENT_ID = "676353071347-colstnf99gb63t16s7jb60smhis420ja.apps.googleusercontent.com";
-  public static final String SERVER_AUTH_URL = "http://localhost:8080/api/";
-
+  public static final String ARGUMENT_SERVER_CLIENT_ID = "serverClientId";
+  public static final String ARGUMENT_SERVER_AUTH_URL = "authApiHost";
 
   // Wraps our service connection to Google Play services and provides access to the users sign in state and Google APIs
   private GoogleApiClient mGoogleApiClient;
-  private String apiKey, webKey. responseType;
-  private CallbackContext savedCallbackContext;
+  private String apiKey, webKey, serverClientId, serverAuthUrl;
   private boolean trySilentLogin;
   private boolean loggingOut;
 
@@ -66,6 +63,8 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
       System.out.println(obj);
       this.webKey = obj.optString(ARGUMENT_WEB_KEY, null);
       this.apiKey = obj.optString(ARGUMENT_ANDROID_KEY, null);
+      this.serverClientId = obj.optString(ARGUMENT_SERVER_CLIENT_ID, null);
+      this.serverAuthUrl = obj.optString(ARGUMENT_SERVER_AUTH_URL, null);
     }
 
     if (ACTION_IS_AVAILABLE.equals(action)) {
@@ -116,9 +115,8 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
       savedCallbackContext.success("disconnected");
     }
   }
-  
     private GoogleApiClient buildGoogleApiClient() {
-    return new GoogleApiClient.Builder(webView.getContext())
+		return new GoogleApiClient.Builder(webView.getContext())
         .addConnectionCallbacks(this)
         .addOnConnectionFailedListener(this)
         .addApi(Plus.API, Plus.PlusOptions.builder().build())
@@ -166,7 +164,7 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
       savedCallbackContext.error("result parsing trouble, error: " + e.getMessage());
     }
   }
-  
+
     @Override
   public void onConnectionSuspended(int constantInClass_ConnectionCallbacks) {
     this.savedCallbackContext.error("connection trouble, code: " + constantInClass_ConnectionCallbacks);
@@ -198,7 +196,6 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
     }
   }
   
-  
   @SuppressWarnings({ "unchecked", "rawtypes" })
   private void resolveToken(final String email, final JSONObject result) {
     final Context context = this.cordova.getActivity().getApplicationContext();
@@ -213,7 +210,7 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
             // Retrieve server side tokens
             scope = "audience:server:client_id:" + GooglePlus.this.webKey;
             token = GoogleAuthUtil.getToken(context, email, scope);
-			if(uploadServerAuthCode(token).statusCode === 200) {
+			if(uploadServerAuthCode(token).statusCode == 200) {
 				result.put("idToken", token);
 			} else {
 				 this.savedCallbackContext.error("Error sending the auth code to the server");
