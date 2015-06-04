@@ -45,6 +45,7 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
   // Wraps our service connection to Google Play services and provides access to the users sign in state and Google APIs
   private GoogleApiClient mGoogleApiClient;
   private String apiKey, webKey, serverClientId, serverAuthUrl;
+  private CallbackContext savedCallbackContext;
   private boolean trySilentLogin;
   private boolean loggingOut;
 
