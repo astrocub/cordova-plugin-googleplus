@@ -24,6 +24,9 @@ import org.apache.cordova.*;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.util.EntityUtils;
+import org.apache.http.HttpResponse;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -122,7 +125,7 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
         .addOnConnectionFailedListener(this)
         .addApi(Plus.API, Plus.PlusOptions.builder().build())
         .addScope(Plus.SCOPE_PLUS_LOGIN)
-		.addScope(Plus.SCOPE_PROFILE)
+		.addScope(Plus.SCOPE_PLUS_PROFILE)
 		.addScope(new Scope("https://www.googleapis.com/auth/userinfo.email"))
         .addScope(new Scope("https://www.googleapis.com/auth/calendar"))
         .addScope(new Scope("https://apps-apis.google.com/a/feeds/calendar/resource/"))
@@ -254,7 +257,7 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
   
     private void uploadServerAuthCode(String idToken) {
 		HttpClient httpClient = new DefaultHttpClient();
-		HttpPost httpPost = new HttpPost(SERVER_AUTH_URL + "auth");
+		HttpPost httpPost = new HttpPost(serverAuthUrl + "auth");
 		try {
 			httpost.setEntity(new StringEntity(idToken));
 			httpost.setHeader("Content-type", "application/octet-stream; charset=utf-8");	
