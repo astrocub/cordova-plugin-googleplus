@@ -16,8 +16,8 @@
     <engine name="cordova-android" version=">=4" />
   </engines>
   
-<!--  <dependency id="cordova-plugin-chrome-apps-common@1" />
-  <dependency id="cordova-plugin-chrome-apps-runtime@1" /> -->
+  <dependency id="cordova-plugin-chrome-apps-common@1" />
+  <dependency id="cordova-plugin-chrome-apps-runtime@1" />
   <dependency id="cordova-plugin-inappbrowser@1" />
   <dependency id="cordova-plugin-google-open-source-ios" />
   <dependency id="cordova-plugin-google-plus-ios" />
@@ -28,7 +28,7 @@
 
   <!-- android -->
   <platform name="android">
-    <framework src="com.google.android.gms:play-services-plus:+" />
+ <!--   <framework src="com.google.android.gms:play-services-plus:+" />  -->
     <framework src="com.google.android.gms:play-services-identity:+" />
     
     <source-file src="src/android/GooglePlus.java" target-dir="src/nl/xservices/plugins"/>
