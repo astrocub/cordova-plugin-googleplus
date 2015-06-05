@@ -1,13 +1,34 @@
 package nl.xservices.plugins;
 
+import java.io.IOException;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import org.apache.cordova.*;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.util.EntityUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.impl.client.DefaultHttpClient;
+
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.Activity;
+import android.app.Dialog;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.os.Bundle;
+import android.util.Log;
+
 import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
+import com.google.android.gms.auth.GooglePlayServicesAvailabilityException;
 import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -18,22 +39,27 @@ import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListe
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.api.Scope;
+import com.google.android.gms.common.AccountPicker;
+import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.plus.Plus;
 import com.google.android.gms.plus.model.people.Person;
-import org.apache.cordova.*;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.util.EntityUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
 
 public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, OnConnectionFailedListener {
+
+    private static final String LOG_TAG = "GooglePlusAuth";
+
+    // These are just unique request codes. They can be anything as long as they don't clash.
+    private static final int AUTH_REQUEST_CODE = 1;
+    private static final int ACCOUNT_CHOOSER_REQUEST_CODE = 2;
+    private static final int USER_RECOVERABLE_REQUEST_CODE = 3;
+    private static final int UPDATE_GOOGLE_PLAY_SERVICES_REQUEST_CODE = 4;
+
+    // Error codes.
+    private static final int ERROR_GOOGLE_PLAY_SERVICES_UNAVAILABLE = -1;
+    private static final int ERROR_REQUIRES_USER_INTERACTION = -2;
+    private static final int ERROR_NETWORK_UNAVAILABLE = -3;
+    private static final int ERROR_USER_CANCELLED = -4;
+    private static final int ERROR_CONCURRENT_REQUEST = -5;
 
   public static final String ACTION_IS_AVAILABLE = "isAvailable";
   public static final String ACTION_LOGIN = "login";
@@ -48,7 +74,7 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
   // Wraps our service connection to Google Play services and provides access to the users sign in state and Google APIs
   private GoogleApiClient mGoogleApiClient;
   private String apiKey, webKey, serverClientId, serverAuthUrl;
-  private CallbackContext savedCallbackContext;
+  private CallbackContext callbackContext;
   private boolean trySilentLogin;
   private boolean loggingOut;
 
@@ -60,7 +86,7 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
 
   @Override
   public boolean execute(String action, CordovaArgs args, CallbackContext callbackContext) throws JSONException {
-    this.savedCallbackContext = callbackContext;
+    this.callbackContext = callbackContext;
 
     if (args.optJSONObject(0) != null){
       JSONObject obj = args.getJSONObject(0);
@@ -73,7 +99,7 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
 
     if (ACTION_IS_AVAILABLE.equals(action)) {
       final boolean avail = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this.cordova.getActivity().getApplicationContext()) == 0;
-      savedCallbackContext.success("" + avail);
+      callbackContext.success("" + avail);
 
     } else if (ACTION_LOGIN.equals(action)) {
       this.trySilentLogin = false;
@@ -93,7 +119,7 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
         mGoogleApiClient.connect();
       } catch (IllegalStateException ignore) {
       }
-      savedCallbackContext.success("logged out");
+      callbackContext.success("logged out");
 
     } else if (ACTION_DISCONNECT.equals(action)) {
       disconnect();
@@ -102,6 +128,18 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
     }
     return true;
   }
+  
+  private static String createScopesString(JSONArray scopes) throws JSONException {
+        StringBuilder ret = new StringBuilder("oauth2:");
+
+        for (int i = 0; i < scopes.length(); i++) {
+            if (i != 0) {
+                ret.append(" ");
+            }
+            ret.append(scopes.getString(i));
+        }
+        return ret.toString();
+    }
 
   private void disconnect() {
     try {
@@ -112,21 +150,21 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
               // mGoogleApiClient is now disconnected and access has been revoked.
               // Don't care if it was disconnected already (status != success).
               mGoogleApiClient = buildGoogleApiClient();
-              savedCallbackContext.success("disconnected");
+              callbackContext.success("disconnected");
             }
           });
     } catch (IllegalStateException e) {
-      savedCallbackContext.success("disconnected");
+      callbackContext.success("disconnected");
     }
   }
     private GoogleApiClient buildGoogleApiClient() {
-		return new GoogleApiClient.Builder(webView.getContext())
+	return new GoogleApiClient.Builder(webView.getContext())
         .addConnectionCallbacks(this)
         .addOnConnectionFailedListener(this)
         .addApi(Plus.API, Plus.PlusOptions.builder().build())
         .addScope(Plus.SCOPE_PLUS_LOGIN)
-		.addScope(Plus.SCOPE_PLUS_PROFILE)
-		.addScope(new Scope("https://www.googleapis.com/auth/userinfo.email"))
+	.addScope(Plus.SCOPE_PLUS_PROFILE)
+	.addScope(new Scope("https://www.googleapis.com/auth/userinfo.email"))
         .addScope(new Scope("https://www.googleapis.com/auth/calendar"))
         .addScope(new Scope("https://apps-apis.google.com/a/feeds/calendar/resource/"))
         .addScope(new Scope("https://www.googleapis.com/auth/admin.directory.user.readonly"))
@@ -165,13 +203,13 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
       }
       resolveToken(email, result);
     } catch (JSONException e) {
-      savedCallbackContext.error("result parsing trouble, error: " + e.getMessage());
+      callbackContext.error("result parsing trouble, error: " + e.getMessage());
     }
   }
 
     @Override
   public void onConnectionSuspended(int constantInClass_ConnectionCallbacks) {
-    this.savedCallbackContext.error("connection trouble, code: " + constantInClass_ConnectionCallbacks);
+    this.callbackContext.error("connection trouble, code: " + constantInClass_ConnectionCallbacks);
   }
 
   /**
@@ -181,10 +219,10 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
   @Override
   public void onConnectionFailed(ConnectionResult result) {
     if (result.getErrorCode() == ConnectionResult.SERVICE_MISSING) { // e.g. emulator without play services installed
-      this.savedCallbackContext.error("service not available");
+      this.callbackContext.error("service not available");
     } else if (loggingOut) {
       loggingOut = false;
-      this.savedCallbackContext.success("logged out");
+      this.callbackContext.success("logged out");
     } else if (result.getErrorCode() == ConnectionResult.SIGN_IN_REQUIRED && !trySilentLogin) {
       final PendingIntent mSignInIntent = result.getResolution();
       try {
@@ -196,7 +234,7 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
         mGoogleApiClient.connect();
       }
     } else {
-      this.savedCallbackContext.error("no valid token");
+      this.callbackContext.error("no valid token");
     }
   }
   
@@ -217,7 +255,7 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
 			if(uploadServerAuthCode(token).statusCode == 200) {
 				result.put("idToken", token);
 			} else {
-				 this.savedCallbackContext.error("Error sending the auth code to the server");
+				 this.callbackContext.error("Error sending the auth code to the server");
 			}
           } else if (GooglePlus.this.apiKey != null) {
             // Retrieve the oauth token with offline mode
@@ -240,17 +278,19 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
           return;
         }
         catch (IOException e) {
-          savedCallbackContext.error("Failed to retrieve token: " + e.getMessage());
+          callbackContext.error("Failed to retrieve token: " + e.getMessage());
           return;
-        } catch (GoogleAuthException e) {
-          savedCallbackContext.error("Failed to retrieve token: " + e.getMessage());
+        } catch (GoogleAuthException authEx) {
+          handleGoogleAuthException(authEx, interactive, callbackContext);
+          //callbackContext.error("Failed to retrieve token: " + e.getMessage());
           return;
         } catch (JSONException e) {
-          savedCallbackContext.error("Failed to retrieve token: " + e.getMessage());
+          Log.e(LOG_TAG, "Error occurred while getting token", e);
+          callbackContext.error("Failed to retrieve token: " + e.getMessage());
           return;
         }
 
-        savedCallbackContext.success(result);
+        callbackContext.success(result);
       }
     });
   }
@@ -265,17 +305,79 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
 			HttpResponse response = httpClient.execute(httpPost);
 			int statusCode = response.getStatusLine().getStatusCode();
 			final String responseBody = EntityUtils.toString(response.getEntity());
-			 this.savedCallbackContext.error("Code: " + statusCode);
-			 this.savedCallbackContext.error("Resp: " + responseBody);
+			 this.callbackContext.error("Code: " + statusCode);
+			 this.callbackContext.error("Resp: " + responseBody);
 			return (statusCode == 200);
 		} catch (ClientProtocolException e) {
-			 this.savedCallbackContext.error("Error in auth code exchange.");
+			 this.callbackContext.error("Error in auth code exchange.");
 			return false;
 		} catch (IOException e) {
-			 this.savedCallbackContext.error("Error in auth code exchange.");
+			 this.callbackContext.error("Error in auth code exchange.");
 			return false;
 		}
 	}
+	
+	
+	private void handlePlayServicesError(final int errorCode, final boolean interactive, final CallbackContext callbackContext) {
+          Log.d(LOG_TAG, "Got PlayServices error: " + errorCode);
+          final boolean userRecoverable = GooglePlayServicesUtil.isUserRecoverableError(errorCode);
+          if (!interactive) {
+              pendingCallDetails = null;
+              callbackContext.error(userRecoverable ? ERROR_REQUIRES_USER_INTERACTION : ERROR_GOOGLE_PLAY_SERVICES_UNAVAILABLE);
+              return;
+          }
+          if (errorCode == ConnectionResult.SERVICE_MISSING) {
+              // This happens in the emulator where Play Services doesn't exist, or on non-Google Android devices.
+              pendingCallDetails = null;
+              callbackContext.error(ERROR_GOOGLE_PLAY_SERVICES_UNAVAILABLE);
+              return;
+          }
+
+        cordova.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (userRecoverable) {
+                    //final CallDetails callDetails = pendingCallDetails;
+                    // Need to set the callback manually since the dialog is the one fires the intent.
+                    cordova.setActivityResultCallback(GooglePlus.this);
+                    Dialog dialog = GooglePlayServicesUtil.getErrorDialog(errorCode, cordova.getActivity(), UPDATE_GOOGLE_PLAY_SERVICES_REQUEST_CODE, new DialogInterface.OnCancelListener() {
+                        @Override
+                        public void onCancel(DialogInterface dialogInterface) {
+                            Log.i(LOG_TAG, "User cancelled the update request");
+                            cordova.setActivityResultCallback(null);
+                        }
+                    });
+                    dialog.show();
+                } else {
+                    Dialog dialog = GooglePlayServicesUtil.getErrorDialog(errorCode, cordova.getActivity(), AUTH_REQUEST_CODE);
+                    dialog.show();
+                    callbackContext.error(ERROR_GOOGLE_PLAY_SERVICES_UNAVAILABLE);
+                    pendingCallDetails = null;
+                }
+            }
+        });
+    }
+
+    private void handleGoogleAuthException(GoogleAuthException ex, boolean interactive, CallbackContext callbackContext) {
+        if (ex instanceof GooglePlayServicesAvailabilityException) {
+            handlePlayServicesError(((GooglePlayServicesAvailabilityException)ex).getConnectionStatusCode(), interactive, callbackContext);
+        } else if (ex instanceof UserRecoverableAuthException){
+            // OAuth Permissions for the app during first run
+            if (interactive) {
+                Intent permissionsIntent = ((UserRecoverableAuthException)ex).getIntent();
+                cordova.startActivityForResult(this, permissionsIntent, USER_RECOVERABLE_REQUEST_CODE);
+            } else {
+                Log.e(LOG_TAG, "Recoverable Error occurred while getting token. No action was taken as interactive is set to false", ex);
+                callbackContext.error(ERROR_REQUIRES_USER_INTERACTION);
+                pendingCallDetails = null;
+            }
+        } else {
+            // This is likely unrecoverable.
+            Log.e(LOG_TAG, "Unrecoverable authentication exception.", ex);
+            callbackContext.error(ERROR_GOOGLE_PLAY_SERVICES_UNAVAILABLE);
+            pendingCallDetails = null;
+        }
+    }
 	
 	  @Override
 	  public void onActivityResult(int requestCode, final int resultCode, final Intent intent) {
@@ -283,7 +385,7 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
 		if (resultCode == Activity.RESULT_OK) {
 		  mGoogleApiClient.connect();
 		} else {
-		  this.savedCallbackContext.error("user cancelled");
+		  this.callbackContext.error("user cancelled");
 		}
 	  } 
 }
