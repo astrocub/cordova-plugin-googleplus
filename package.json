@@ -28,8 +28,8 @@
   ],
   "engines": [
     {
-      "name": "cordova",
-      "version": ">=3.3.0"
+      "name": "cordova-android",
+      "version": ">=4"
     }
   ],
   "author": "Eddy Verbruggen",
