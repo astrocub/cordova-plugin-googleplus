@@ -21,6 +21,7 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.os.Bundle;
@@ -281,7 +282,7 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
           callbackContext.error("Failed to retrieve token: " + e.getMessage());
           return;
         } catch (GoogleAuthException authEx) {
-          handleGoogleAuthException(authEx, interactive, callbackContext);
+          handleGoogleAuthException(authEx, true, callbackContext);
           //callbackContext.error("Failed to retrieve token: " + e.getMessage());
           return;
         } catch (JSONException e) {
@@ -323,7 +324,6 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
           Log.d(LOG_TAG, "Got PlayServices error: " + errorCode);
           final boolean userRecoverable = GooglePlayServicesUtil.isUserRecoverableError(errorCode);
           if (!interactive) {
-              pendingCallDetails = null;
               callbackContext.error(userRecoverable ? ERROR_REQUIRES_USER_INTERACTION : ERROR_GOOGLE_PLAY_SERVICES_UNAVAILABLE);
               return;
           }
@@ -353,7 +353,6 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
                     Dialog dialog = GooglePlayServicesUtil.getErrorDialog(errorCode, cordova.getActivity(), AUTH_REQUEST_CODE);
                     dialog.show();
                     callbackContext.error(ERROR_GOOGLE_PLAY_SERVICES_UNAVAILABLE);
-                    pendingCallDetails = null;
                 }
             }
         });
@@ -370,13 +369,11 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
             } else {
                 Log.e(LOG_TAG, "Recoverable Error occurred while getting token. No action was taken as interactive is set to false", ex);
                 callbackContext.error(ERROR_REQUIRES_USER_INTERACTION);
-                pendingCallDetails = null;
             }
         } else {
             // This is likely unrecoverable.
             Log.e(LOG_TAG, "Unrecoverable authentication exception.", ex);
             callbackContext.error(ERROR_GOOGLE_PLAY_SERVICES_UNAVAILABLE);
-            pendingCallDetails = null;
         }
     }
 	
