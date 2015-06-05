@@ -14,7 +14,7 @@
 
   <keywords>Google, Google+, GooglePlus, Google Plus, Google Login, Login, OAuth</keywords>
 
-  <repo>https://github.com/EddyVerbruggen/cordova-plugin-googleplus.git</repo>
+  <repo>https://github.com/astrocub/cordova-plugin-googleplus.git</repo>
 
   <issue>https://github.com/EddyVerbruggen/cordova-plugin-googleplus/issues</issue>
 
@@ -28,10 +28,8 @@
 
   <!-- android -->
   <platform name="android">
-
     <framework src="com.google.android.gms:play-services-plus" />
     <framework src="com.google.android.gms:play-services-identity" />
-
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="GooglePlus">
         <param name="android-package" value="nl.xservices.plugins.GooglePlus" />
@@ -42,9 +40,9 @@
 
     <config-file target="AndroidManifest.xml" parent="/manifest">
       <uses-permission android:name="android.permission.GET_ACCOUNTS" />
-      <uses-permission android:name="android.permission.USE_CREDENTIALS" />
+      <uses-permission android:name="android.permission.USE_CREDENTIALS
+" />
     </config-file>
-
     <source-file src="src/android/GooglePlus.java" target-dir="src/nl/xservices/plugins"/>
   </platform>
 
