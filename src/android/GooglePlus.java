@@ -252,11 +252,11 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
             // Retrieve server side tokens
             scope = "audience:server:client_id:" + GooglePlus.this.webKey;
             token = GoogleAuthUtil.getToken(context, email, scope);
-			if(uploadServerAuthCode(token).statusCode == 200) {
-				result.put("idToken", token);
-			} else {
-				 this.callbackContext.error("Error sending the auth code to the server");
-			}
+	   // if(uploadServerAuthCode(token)) {
+		result.put("idToken", token);
+	    //} else {
+	//	this.callbackContext.error("Error sending the auth code to the server");
+	    //}
           } else if (GooglePlus.this.apiKey != null) {
             // Retrieve the oauth token with offline mode
             scope = "oauth2:server:client_id:" + GooglePlus.this.apiKey;
@@ -295,19 +295,20 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
     });
   }
   
+  /*
+  
     private void uploadServerAuthCode(String idToken) {
 		HttpClient httpClient = new DefaultHttpClient();
 		HttpPost httpPost = new HttpPost(serverAuthUrl + "auth");
 		try {
 			httpost.setEntity(new StringEntity(idToken));
 			httpost.setHeader("Content-type", "application/octet-stream; charset=utf-8");	
-
 			HttpResponse response = httpClient.execute(httpPost);
 			int statusCode = response.getStatusLine().getStatusCode();
 			final String responseBody = EntityUtils.toString(response.getEntity());
 			 this.callbackContext.error("Code: " + statusCode);
 			 this.callbackContext.error("Resp: " + responseBody);
-			return (statusCode == 200);
+			return true;
 		} catch (ClientProtocolException e) {
 			 this.callbackContext.error("Error in auth code exchange.");
 			return false;
@@ -316,7 +317,7 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
 			return false;
 		}
 	}
-	
+*/
 	
 	private void handlePlayServicesError(final int errorCode, final boolean interactive, final CallbackContext callbackContext) {
           Log.d(LOG_TAG, "Got PlayServices error: " + errorCode);
