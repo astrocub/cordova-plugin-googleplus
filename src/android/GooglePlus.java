@@ -329,7 +329,6 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
           }
           if (errorCode == ConnectionResult.SERVICE_MISSING) {
               // This happens in the emulator where Play Services doesn't exist, or on non-Google Android devices.
-              pendingCallDetails = null;
               callbackContext.error(ERROR_GOOGLE_PLAY_SERVICES_UNAVAILABLE);
               return;
           }
