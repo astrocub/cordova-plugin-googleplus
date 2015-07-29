@@ -2,9 +2,9 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
         xmlns:android="http://schemas.android.com/apk/res/android"
         id="nl.x-services.plugins.googleplus"
-        version="2.0.3">
+        version="3.0.1">
 
-  <name>Google+</name>
+  <name>PSGoogle+</name>
   <description>Use your Google account to authenticate with the app.</description>
   <author>Eddy Verbruggen</author>
   <license>MIT</license>
@@ -35,29 +35,12 @@
       <access origin="https://accounts.google.com/*" />
     </config-file>
 
-    <config-file target="AndroidManifest.xml" parent="/*">
-      <uses-permission android:name="android.permission.USE_CREDENTIALS" />
-    </config-file>
-    <config-file target="AndroidManifest.xml" parent="/*">
-      <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <config-file target="AndroidManifest.xml" parent="/manifest">
+      <uses-permission android:name="android.permission.GET_ACCOUNTS"/>
+      <uses-permission android:name="android.permission.USE_CREDENTIALS"/>
     </config-file>
     
   </platform>
-
-
-<!--   
-<platform name="ios">
-     <source-file src="src/ios/ChromeIdentity.m" />
-
-     <config-file target="config.xml" parent="/widget">
-       <feature name="ChromeIdentity">
-         <param name="ios-package" value="ChromeIdentity"/>
-       </feature>
-       <access origin="https://accounts.google.com/*" />
-     </config-file>
-  </platform>
-  
-  -->
 
   <!-- ios -->
   <platform name="ios">
@@ -65,9 +48,9 @@
     <config-file target="config.xml" parent="/*">
       <feature name="GooglePlus">
         <param name="ios-package" value="GooglePlus"/>
-        <param name="onload" value="true" />
+        <param name="onload" value="true"/>
       </feature>
-      <access origin="https://accounts.google.com/*" />
+      <access origin="https://accounts.google.com/*"/>
     </config-file>
 
     <header-file src="src/ios/GooglePlus.h"/>
@@ -85,21 +68,33 @@
             <string>$PACKAGE_NAME</string>
           </array>
         </dict>
+        <dict>
+          <key>CFBundleTypeRole</key>
+          <string>Editor</string>
+          <key>CFBundleURLName</key>
+          <string>REVERSED_CLIENT_ID</string>
+          <key>CFBundleURLSchemes</key>
+          <array>
+            <string>$REVERSED_CLIENT_ID</string>
+          </array>
+        </dict>
       </array>
     </config-file>
 
     <!-- Google+ framework -->
-    <framework src="src/ios/libs/GooglePlus.framework" custom="true" />
-    <framework src="src/ios/libs/GoogleOpenSource.framework" custom="true" />
+    <!--    <framework src="src/ios/libs/GooglePlus.framework" custom="true" />-->
+    <framework src="src/ios/libs/GoogleOpenSource.framework" custom="true"/>
+    <framework src="src/ios/libs/GoogleSignIn.framework" custom="true"/>
 
     <!-- System frameworks -->
-    <framework src="AddressBook.framework" weak="true" />
-    <framework src="CoreMotion.framework" weak="true" />
-    <framework src="CoreText.framework" weak="true" />
-    <framework src="CoreLocation.framework" weak="true" />
-    <framework src="MediaPlayer.framework" weak="true" />
-    <framework src="Security.framework" weak="true" />
-    <framework src="SystemConfiguration.framework" weak="true" />
+    <framework src="AddressBook.framework" weak="true"/>
+    <framework src="CoreMotion.framework" weak="true"/>
+    <framework src="CoreText.framework" weak="true"/>
+    <framework src="CoreLocation.framework" weak="true"/>
+    <framework src="MediaPlayer.framework" weak="true"/>
+    <framework src="Security.framework" weak="true"/>
+    <framework src="StoreKit.framework" weak="true"/>
+    <framework src="SystemConfiguration.framework" weak="true"/>
 
   </platform>
 

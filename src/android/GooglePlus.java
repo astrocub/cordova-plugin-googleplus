@@ -164,8 +164,8 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
         .addOnConnectionFailedListener(this)
         .addApi(Plus.API, Plus.PlusOptions.builder().build())
         .addScope(Plus.SCOPE_PLUS_LOGIN)
-	.addScope(Plus.SCOPE_PLUS_PROFILE)
-	.addScope(new Scope("https://www.googleapis.com/auth/userinfo.email"))
+	    .addScope(Plus.SCOPE_PLUS_PROFILE)
+	    .addScope(new Scope("https://www.googleapis.com/auth/userinfo.email"))
         .addScope(new Scope("https://www.googleapis.com/auth/calendar"))
         .addScope(new Scope("https://apps-apis.google.com/a/feeds/calendar/resource/"))
         .addScope(new Scope("https://www.googleapis.com/auth/admin.directory.user.readonly"))
@@ -190,6 +190,7 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
     try {
       result.put("email", email);
       // in case there was no internet connection, this may be null
+      /*
       if (user != null) {
         result.put("userId", user.getId());
         result.put("displayName", user.getDisplayName());
@@ -202,6 +203,7 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
           result.put("familyName", user.getName().getFamilyName());
         }
       }
+      */
       resolveToken(email, result);
     } catch (JSONException e) {
       callbackContext.error("result parsing trouble, error: " + e.getMessage());
@@ -224,7 +226,7 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
     } else if (loggingOut) {
       loggingOut = false;
       this.callbackContext.success("logged out");
-    } else if (result.getErrorCode() == ConnectionResult.SIGN_IN_REQUIRED && !trySilentLogin) {
+    } else if (result.getErrorCode() == ConnectionResult.SIGN_IN_REQUIRED || result.getErrorCode() == ConnectionResult.RESOLUTION_REQUIRED && !trySilentLogin) {
       final PendingIntent mSignInIntent = result.getResolution();
       try {
         // startIntentSenderForResult is started from the CordovaActivity,
@@ -253,11 +255,11 @@ public class GooglePlus extends CordovaPlugin implements ConnectionCallbacks, On
             // Retrieve server side tokens
             scope = "audience:server:client_id:" + GooglePlus.this.webKey;
             token = GoogleAuthUtil.getToken(context, email, scope);
-	   // if(uploadServerAuthCode(token)) {
-		result.put("idToken", token);
-	    //} else {
-	//	this.callbackContext.error("Error sending the auth code to the server");
-	    //}
+           // if(uploadServerAuthCode(token)) {
+                result.put("idToken", token);
+            //} else {
+                //this.callbackContext.error("Error sending the auth code to the server");
+            //}
           } else if (GooglePlus.this.apiKey != null) {
             // Retrieve the oauth token with offline mode
             scope = "oauth2:server:client_id:" + GooglePlus.this.apiKey;
