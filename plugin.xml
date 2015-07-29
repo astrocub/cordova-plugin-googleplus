@@ -22,8 +22,8 @@
 
   <!-- android -->
   <platform name="android">
-    <framework src="com.google.android.gms:play-services-plus:7.5.0" />
-    <framework src="com.google.android.gms:play-services-identity:7.5.0" />
+    <framework src="com.google.android.gms:play-services-plus:+" />
+    <framework src="com.google.android.gms:play-services-identity:+" />
     
     <source-file src="src/android/GooglePlus.java" target-dir="src/nl/xservices/plugins"/>
     
